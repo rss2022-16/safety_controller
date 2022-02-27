@@ -1,0 +1,8 @@
+scan_topic: "/scan"
+drive_in_topic: "/drive_in"
+drive_out_topic: "/drive_out"
+velocity: 1
+drive_comm_timeout: 0.5
+scan_comm_timeout: 0.5
+collision_interval: 0.25
+length: .15
