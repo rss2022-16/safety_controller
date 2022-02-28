@@ -24,21 +24,23 @@ class SafetyController:
         # Parameters
         self.DT = .1
         self.scan_topic = rospy.get_param("~scan_topic")
-        self.drive_topic = rospy.get_param("~drive_topic")
-        self.velocity = rospy.get_param("~velocity")
-        self.drive_comm_timeout = rospy.get_param("~drive_comm_timeout")
-        self.scan_comm_timeout = rospy.get_param("~scan_comm_timeout")
+        self.drive_in_topic = rospy.get_param("~drive_in_topic")
+        self.drive_out_topic = rospy.get_param("~drive_out_topic")
+        self.drive_comm_timeout = rospy.Duration(rospy.get_param("~drive_comm_timeout"))
+        self.scan_comm_timeout = rospy.Duration(rospy.get_param("~scan_comm_timeout"))
         self.collision_interval = rospy.get_param("~collision_interval")
         self.length = rospy.get_param("~length")
 
         # Pub and sub
-        self.drive_pub = rospy.Publisher(self.drive_topic, AckermannDriveStamped, queue_size=10)
-        self.drive_sub = rospy.Subscriber(self.drive_topic, AckermannDriveStamped, self.drive_cb)
+        self.drive_pub = rospy.Publisher(self.drive_out_topic, AckermannDriveStamped, queue_size=10)
+        self.drive_sub = rospy.Subscriber(self.drive_in_topic, AckermannDriveStamped, self.drive_cb)
         self.scan_sub = rospy.Subscriber(self.scan_topic, LaserScan, self.scan_cb)
 
         # Class vars
-        self.cmd = None
-        self.scan = None
+        self.cmd = AckermannDriveStamped()
+        self.cmd.header.stamp = rospy.Time.now()
+        self.scan = LaserScan()
+        self.scan.header.stamp = rospy.Time.now()
 
         # Callbacks and shutdown behavior
         rospy.Timer(rospy.Duration(self.DT), self.cb)
@@ -50,8 +52,6 @@ class SafetyController:
         Records LaserScan data
         """
         self.scan = scan
-        # ranges = np.array(scan.ranges)
-        # angles = np.linspace(scan.angle_min, scan.angle_max, num=len(scan.ranges))
         
 
     def drive_cb(self, cmd):
@@ -66,7 +66,7 @@ class SafetyController:
         Main safety callback
         """
         if rospy.Time.now() - self.cmd.header.stamp >= self.drive_comm_timeout:
-            self.send_driveI(0, 0)
+            self.send_drive(0, 0)
             rospy.logwarn("Haven't received a message from drive topic in a while. Stopping...")
             return
 
@@ -87,22 +87,22 @@ class SafetyController:
         """
 
         # Truncate scan data to nearby & ahead points
-        ranges = np.array(scan.ranges)
-        angles = np.linspace(scan.angle_min, scan.angle_max, num=len(scan.ranges))
+        ranges = np.array(self.scan.ranges)
+        angles = np.linspace(self.scan.angle_min, self.scan.angle_max, num=len(self.scan.ranges))
 
-        ceiling = self.drive.speed * self.collision_interval + self.length
+        ceiling = self.cmd.drive.speed * self.collision_interval + self.length
         far_points = [i for i in range(len(ranges)) if ranges[i] >= ceiling or abs(angles[i]) >= np.pi/2]
         ranges = np.delete(ranges, far_points, axis=0)
-        angles = np.delete(ranges, far_points, axis=0)
+        angles = np.delete(angles, far_points, axis=0)
 
         # Convert to x,y
         xy = np.stack( (np.multiply(ranges,np.cos(angles)), np.multiply(ranges,np.sin(angles))), axis=1)
 
         # Calculate future car location -- Linearize (Is this a good assumption?)
-        carpoint = [0, self.drive.speed * self.collision_interval]
+        carpoint = [self.cmd.drive.speed * self.collision_interval, 0]
 
         # # Calculate future car location -- Non-linearly (In progress)
-        # arclength = self.drive.speed * self.collision_interval
+        # arclength = self.cmd.drive.speed * self.collision_interval
         # if np.tan(eta) != 0:
         #     radius = L / np.tan(eta)
         #     theta = arclength / radius
@@ -111,7 +111,10 @@ class SafetyController:
         
         # Check if there's a collision
         for p in xy:
-            if np.sqrt((p[0] - carpoint[0])**2 + (p[1] - carpoint[1])**2) <= self.length:
+            # Bubble method
+            # if np.sqrt((p[0] - carpoint[0])**2 + (p[1] - carpoint[1])**2) <= self.length:
+            # Rectangle method
+            if p[0] >= 0 and p[0] <= (carpoint + self.length) and abs(p[1]) <= self.length:
                 return True
 
         return False
