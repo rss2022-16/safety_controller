@@ -114,7 +114,7 @@ class SafetyController:
             # Bubble method
             # if np.sqrt((p[0] - carpoint[0])**2 + (p[1] - carpoint[1])**2) <= self.length:
             # Rectangle method
-            if p[0] >= 0 and p[0] <= (carpoint + self.length) and abs(p[1]) <= self.length:
+            if p[0] >= 0 and p[0] <= (carpoint[0] + self.length) and abs(p[1]) <= self.length:
                 return True
 
         return False
