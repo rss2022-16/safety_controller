@@ -12,9 +12,9 @@ class SafetyController:
     SAFETY_TOPIC = "/vesc/low_level/ackermann_cmd_mux/input/safety"
 
     def __init__(self):
-        self.scan_sub = rospy.Subscriber = (self.SCAN_TOPIC, LaserScan, self.obstacle_detector)
-        self.drive_sub = rospy.Subscriber = (self.INCOMING_DRIVE_TOPIC, AckermannDriveStamped, self.speed_analyzer)
-        self.safety_pub = rospy.Publisher = (self.SAFETY_TOPIC, AckermannDriveStamped, queue_size = 10)
+        self.scan_sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.obstacle_detector)
+        self.drive_sub = rospy.Subscriber(self.INCOMING_DRIVE_TOPIC, AckermannDriveStamped, self.speed_analyzer)
+        self.safety_pub = rospy.Publisher(self.SAFETY_TOPIC, AckermannDriveStamped, queue_size = 10)
 
         self.straight_ahead_distance = np.inf
 
