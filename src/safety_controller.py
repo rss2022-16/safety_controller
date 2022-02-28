@@ -91,7 +91,7 @@ class SafetyController:
         angles = np.linspace(scan.angle_min, scan.angle_max, num=len(scan.ranges))
 
         ceiling = self.drive.speed * self.collision_interval + self.length
-        far_points = [i for i in range(len(ranges)) if ranges[i] >= ceiling or if abs(angles[i]) >= np.pi/2]
+        far_points = [i for i in range(len(ranges)) if ranges[i] >= ceiling or abs(angles[i]) >= np.pi/2]
         ranges = np.delete(ranges, far_points, axis=0)
         angles = np.delete(ranges, far_points, axis=0)
 
