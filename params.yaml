@@ -1,0 +1,7 @@
+scan_topic: "/scan"
+drive_in_topic: "/vesc/high_level/ackermann_cmd_mux/output"
+drive_out_topic: "/vesc/low_level/ackermann_cmd_mux/input/safety"
+drive_comm_timeout: 0.5
+scan_comm_timeout: 0.5
+collision_interval: 0.5
+length: .15
