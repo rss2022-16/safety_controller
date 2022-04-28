@@ -52,7 +52,7 @@ class SafetyController:
         Records LaserScan data
         """
         self.scan = scan
-        
+
 
     def drive_cb(self, cmd):
         """
@@ -101,6 +101,15 @@ class SafetyController:
         # Calculate future car location -- Linearize (Is this a good assumption?)
         carpoint = [self.cmd.drive.speed * self.collision_interval, 0]
 
+        theta = self.cmd.drive.steering_angle
+        sint = np.sin(theta)
+        cost = np.cos(theta)
+        rot_mat = np.array([[cost, -sint],[sint, cost]])
+        xy = np.array(carpoint)
+
+        carpoint = np.dot(rot_mat, xy)
+
+
         # # Calculate future car location -- Non-linearly (In progress)
         # arclength = self.cmd.drive.speed * self.collision_interval
         # if np.tan(eta) != 0:
@@ -108,7 +117,7 @@ class SafetyController:
         #     theta = arclength / radius
         # else:
         #     radius = 'inf'
-        
+
         # Check if there's a collision
         for p in xy:
             # Bubble method
